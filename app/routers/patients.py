@@ -42,9 +42,7 @@ def list_patients(
         )
 
         data = [
-            schemas.PatientResponse.model_validate(
-                patient
-            )
+            schemas.PatientResponse.model_validate(patient)
             for patient in patients
         ]
 
@@ -94,40 +92,48 @@ def get_patient(
         )
 
     return {
-        "data": schemas.PatientResponse.model_validate(
-            patient
-        ),
+        "data": schemas.PatientResponse.model_validate(patient),
         "error": None,
     }
 
 
+# ---------------------------------------------------------
+# GET /patients/by-phone/{phone_number}
+# VAPI LOOKUP ENDPOINT
+# ---------------------------------------------------------
+
 @router.get(
     "/by-phone/{phone_number}",
-    response_model=schemas.APIResponse[schemas.PatientResponse],
+    response_model=Optional[schemas.PatientResponse],
 )
 def get_patient_by_phone_route(
     phone_number: str,
     db: Session = Depends(get_db),
 ):
     try:
-        patient = crud.get_patient_by_phone(db, phone_number)
+        patient = crud.get_patient_by_phone(
+            db,
+            phone_number,
+        )
 
         if not patient:
-            return {
-                "data": None,
-                "error": None,
-            }
+            return None
 
-        return {
-            "data": schemas.PatientResponse.model_validate(patient),
-            "error": None,
-        }
+        return schemas.PatientResponse.model_validate(
+            patient
+        )
 
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        )
 
     except SQLAlchemyError:
-        logger.exception("Database error while looking up patient by phone")
+        logger.exception(
+            "Database error while looking up patient by phone"
+        )
+
         raise HTTPException(
             status_code=500,
             detail="Unable to retrieve patient",
@@ -136,20 +142,20 @@ def get_patient_by_phone_route(
 
 # ---------------------------------------------------------
 # POST /patients
+# VAPI CREATE PATIENT ENDPOINT
 # ---------------------------------------------------------
 
 @router.post(
     "",
     status_code=201,
-    response_model=schemas.APIResponse[schemas.PatientResponse],
+    response_model=schemas.PatientResponse,
 )
 def create_patient(
     patient: schemas.PatientCreate,
     db: Session = Depends(get_db),
 ):
     try:
-        # Bonus requirement:
-        # duplicate detection based on phone number.
+
         existing = crud.get_patient_by_phone(
             db,
             patient.phone_number,
@@ -158,9 +164,7 @@ def create_patient(
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "A patient with this phone number already exists"
-                ),
+                detail="A patient with this phone number already exists",
             )
 
         created = crud.create_patient(
@@ -168,19 +172,14 @@ def create_patient(
             patient,
         )
 
-        # Assessment requires at least final collected
-        # payload to be logged.
         logger.info(
             "Patient created: %s",
             patient.model_dump(mode="json"),
         )
 
-        return {
-            "data": schemas.PatientResponse.model_validate(
-                created
-            ),
-            "error": None,
-        }
+        return schemas.PatientResponse.model_validate(
+            created
+        )
 
     except HTTPException:
         raise
@@ -222,9 +221,8 @@ def update_patient(
             detail="Patient not found",
         )
 
-    # If phone number is being changed,
-    # make sure it does not belong to someone else.
     if patient_update.phone_number:
+
         duplicate = crud.get_patient_by_phone(
             db,
             patient_update.phone_number,
@@ -236,12 +234,11 @@ def update_patient(
         ):
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "A patient with this phone number already exists"
-                ),
+                detail="A patient with this phone number already exists",
             )
 
     try:
+
         updated = crud.update_patient(
             db,
             patient,
@@ -258,13 +255,12 @@ def update_patient(
         )
 
         return {
-            "data": schemas.PatientResponse.model_validate(
-                updated
-            ),
+            "data": schemas.PatientResponse.model_validate(updated),
             "error": None,
         }
 
     except SQLAlchemyError:
+
         db.rollback()
 
         logger.exception(
@@ -284,14 +280,13 @@ def update_patient(
 
 @router.delete(
     "/{patient_id}",
-    response_model=schemas.APIResponse[
-        schemas.DeleteResponse
-    ],
+    response_model=schemas.APIResponse[schemas.DeleteResponse],
 )
 def delete_patient(
     patient_id: str,
     db: Session = Depends(get_db),
 ):
+
     patient = crud.get_patient(
         db,
         patient_id,
@@ -304,6 +299,7 @@ def delete_patient(
         )
 
     try:
+
         deleted = crud.soft_delete_patient(
             db,
             patient,
@@ -323,6 +319,7 @@ def delete_patient(
         }
 
     except SQLAlchemyError:
+
         db.rollback()
 
         logger.exception(

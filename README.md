@@ -1,14 +1,13 @@
 # Patient Registration Voice AI Agent
 
-A voice-powered patient registration receptionist system built using **FastAPI**, **SQLite**, and **Vapi Voice AI**.
+A voice-powered patient registration and receptionist system built with **FastAPI**, **SQLite**, and **Vapi Voice AI**.
 
-The system provides a natural voice interaction experience where callers can:
-- Register as new patients
-- Look up existing patient records
-- Confirm and validate information before saving
-- Receive assistance with appointment-related requests
-
-The goal of this project is to demonstrate a complete voice AI workflow connected to a backend patient management API.
+The system allows callers to interact with an AI receptionist that can:
+- Register new patients through a natural voice conversation
+- Find existing patient records using phone number lookup
+- Validate patient information
+- Confirm details before creating records
+- Handle appointment-related requests safely
 
 ---
 
@@ -28,42 +27,48 @@ FastAPI REST API
 SQLite Database
 ```
 
-## High-Level Flow
+## Flow
 
-### Existing Patient Flow
+### Existing Patient
 
 ```
-Caller
-  |
-Provides phone number
-  |
+Caller provides phone number
+        |
+        v
+find_patient_by_phone
+        |
+        v
+Patient found
+        |
+        v
+Continue conversation
+```
+
+### New Patient Registration
+
+```
+Caller provides phone number
+        |
+        v
 Patient lookup
-  |
-Existing record found
-  |
-Continue assistance
-```
-
-### New Patient Registration Flow
-
-```
-Caller
-  |
-Provides phone number
-  |
-Patient lookup
-  |
-No existing record found
-  |
+        |
+        v
+No patient found
+        |
+        v
 Collect patient information
-  |
+        |
+        v
 Read information back
-  |
+        |
+        v
 Caller confirms
-  |
-Create patient record
-  |
-Registration completed
+        |
+        v
+create_patient
+        |
+        v
+Patient created
 ```
 
 ---
@@ -73,81 +78,42 @@ Registration completed
 ## Voice Receptionist
 
 The AI receptionist can:
-
-- Greet callers naturally
-- Understand caller intent
-- Collect patient information
-- Search existing patients
+- Welcome callers
+- Collect caller information
+- Find existing patient records
 - Register new patients
-- Handle corrections during registration
 - Confirm information before saving
+- Handle corrections during registration
 
----
+## Patient Lookup
 
-## Existing Patient Lookup
-
-The assistant can identify existing patients using their registered phone number.
-
-Flow:
+Endpoint:
 
 ```
-Phone Number
-      |
-      v
-find_patient_by_phone
-      |
-      v
-Patient Record
+GET /patients/by-phone/{phone_number}
 ```
 
----
+## Patient Registration
 
-## New Patient Registration
-
-New patients are only created after:
-
+New patients are created only after:
 1. Required information is collected
-2. Information is read back to the caller
+2. Information is read back
 3. Caller explicitly confirms
-
-This prevents accidental or incorrect registrations.
 
 ---
 
 # Technology Stack
 
-## Voice Layer
-
-**Vapi Voice AI**
-
-Used for:
-- Voice conversations
-- Assistant behavior
-- Tool execution
-- Natural language interaction
-
----
+## Voice AI
+- Vapi Voice AI Platform
 
 ## Backend
-
-**FastAPI**
-
-Used for:
-- REST API endpoints
-- Request validation
-- Business logic
-- Patient management
-
----
+- Python
+- FastAPI
+- Pydantic
 
 ## Database
-
-**SQLite**
-
-Used for:
-- Patient persistence
-- Local development
-- Demo environment
+- SQLite
 
 ---
 
@@ -161,77 +127,32 @@ Used for:
 | last_name | Patient last name |
 | date_of_birth | Date of birth |
 | sex | Patient sex |
-| phone_number | 10-digit US phone number |
+| phone_number | US phone number |
 | address_line_1 | Primary address |
 | city | City |
-| state | US state abbreviation |
+| state | State abbreviation |
 | zip_code | ZIP code |
-
----
 
 ## Optional Fields
 
 | Field | Description |
 |---|---|
 | email | Email address |
-| address_line_2 | Additional address information |
-| insurance_provider | Insurance provider |
+| address_line_2 | Additional address |
+| insurance_provider | Insurance company |
 | insurance_member_id | Insurance member ID |
 | preferred_language | Preferred language |
-| emergency_contact_name | Emergency contact name |
+| emergency_contact_name | Emergency contact |
 | emergency_contact_phone | Emergency contact phone |
 
 ---
 
 # Validation Rules
 
-The backend validates:
-
-## Phone Number
-
-- Must contain a valid 10-digit US phone number
-
-Example:
-
-```
-2125551234
-```
-
----
-
-## Date of Birth
-
-- Must be a valid date
-- Cannot be in the future
-
----
-
-## State
-
-State names are normalized into two-letter abbreviations.
-
-Example:
-
-```
-New York → NY
-California → CA
-```
-
----
-
-## ZIP Code
-
-Supported formats:
-
-```
-10001
-```
-
-or:
-
-```
-10001-1234
-```
+- Phone number must be a valid 10-digit US number.
+- Date of birth cannot be in the future.
+- State names are converted to two-letter abbreviations.
+- ZIP codes support 5 digits or ZIP+4.
 
 ---
 
@@ -243,9 +164,7 @@ or:
 POST /patients
 ```
 
-Creates a new patient record.
-
-Example request:
+Example:
 
 ```json
 {
@@ -260,8 +179,6 @@ Example request:
   "zip_code": "79100"
 }
 ```
-
----
 
 ## Find Patient By Phone
 
@@ -281,9 +198,7 @@ GET /patients/by-phone/2125551234
 
 ## find_patient_by_phone
 
-Purpose:
-
-Find an existing patient using their phone number.
+Used to locate existing patients.
 
 Input:
 
@@ -293,72 +208,57 @@ Input:
 }
 ```
 
----
-
 ## create_patient
 
-Purpose:
+Used to create a patient after confirmation.
 
-Create a new patient after caller confirmation.
-
-The assistant follows this flow:
+Flow:
 
 ```
-Collect information
-        |
-Read information back
-        |
+Collect details
+      |
+Read back details
+      |
 Caller confirms
-        |
-create_patient tool
-        |
-Patient created
+      |
+create_patient
 ```
 
 ---
 
-# Local Development Setup
+# Local Setup
 
-## 1. Clone Repository
-
-Clone this GitHub repository and enter the project directory:
+## Clone Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone <repository-url>
 cd patient-registration
 ```
 
----
+## Create Virtual Environment
 
-## 2. Create Virtual Environment
-
-### Windows
+Windows:
 
 ```bash
 python -m venv .venv
-
 .venv\Scripts\activate
 ```
 
-### macOS/Linux
-
-```bash
-python -m venv .venv
-
-source .venv/bin/activate
-```
-
----
-
-## 3. Install Dependencies
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
+## Run Application
+
+```bash
+uvicorn app.main:app --reload
+```
+
 ---
 
-## 4. Configure Environment Variables
+# Environment Variables
 
 Create:
 
@@ -374,79 +274,60 @@ DATABASE_URL=sqlite:///./patients.db
 
 ---
 
-## 5. Run Application
+# Testing
 
-```bash
-uvicorn app.main:app --reload
-```
-
-The API will start locally:
-
-```
-http://127.0.0.1:8000
-```
-
----
-
-# Testing Scenarios
-
-## Scenario 1: Existing Patient
+## Existing Patient
 
 Example:
 
 ```
-Phone:
-2125551234
+Phone: 2125551234
 ```
 
-Expected flow:
+Expected:
 
 ```
-Phone lookup
-      |
+find_patient_by_phone
+        |
 Patient found
-      |
+        |
 Continue conversation
 ```
 
----
-
-## Scenario 2: New Patient Registration
+## New Patient
 
 Example:
 
 ```
-Phone:
-6465557890
+Phone: 6465557890
 ```
 
-Expected flow:
+Expected:
 
 ```
-Phone lookup
-      |
+find_patient_by_phone
+        |
 No patient found
-      |
+        |
 Collect information
-      |
+        |
 Confirm information
-      |
-Create patient
-      |
-Registration completed
+        |
+create_patient
+        |
+Registration complete
 ```
 
 ---
 
-# Assistant Safety Rules
+# Safety Rules
 
 The assistant:
-
 - Never exposes internal tools
 - Never creates patients without confirmation
+- Never claims appointments are booked without a scheduling system
 - Never invents patient information
-- Never claims appointments are booked without scheduling integration
-- Uses only verified API responses
+- Uses only returned API information
 
 ---
 
@@ -454,60 +335,58 @@ The assistant:
 
 ## Appointment Scheduling
 
-The assistant currently collects appointment requests and preferences.
+The assistant can collect appointment requests and preferences.
 
-Actual appointment booking requires a scheduling backend integration.
+Actual scheduling requires a scheduling backend integration.
 
----
+## Voice Transcription
 
-## Voice Recognition
-
-Voice transcription can occasionally misinterpret spoken digits.
-
-The assistant handles this by:
-- Normalizing phone numbers
-- Asking for confirmation
-- Allowing corrections
+Spoken phone numbers may occasionally require confirmation due to speech recognition variations.
 
 ---
 
 # Future Improvements
-
-Possible improvements:
 
 - Appointment scheduling integration
 - Patient update API
 - Appointment availability lookup
 - Authentication
 - Admin dashboard
-- Automated test coverage
+- Automated tests
 - Multi-language support
 
 ---
 
-# Project Summary
+# Demo Summary
 
-This project demonstrates an end-to-end voice AI healthcare receptionist workflow:
+## Existing Patient Flow
 
 ```
-Voice Caller
-     |
-     v
-Vapi Assistant
-     |
-     v
-FastAPI Backend
-     |
-     v
-SQLite Database
+Caller
+ |
+Phone lookup
+ |
+Patient found
+ |
+Assistance provided
 ```
 
-The system supports both:
-- Existing patient assistance
-- New patient registration
+## New Patient Flow
+
+```
+Caller
+ |
+Phone lookup
+ |
+No record found
+ |
+Collect information
+ |
+Confirmation
+ |
+Create patient
+ |
+Registration complete
+```
 
 ---
-
-# Author
-
-Built as part of the Patient Registration Voice AI Coding Challenge.
