@@ -64,7 +64,7 @@ def validate_sex_value(value: str) -> str:
 
 
 def normalize_phone(value: Optional[str]) -> Optional[str]:
-    if value is None:
+    if value is None or value.strip() == "":
         return None
 
     digits = re.sub(r"\D", "", value)
